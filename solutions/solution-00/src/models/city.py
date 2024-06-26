@@ -1,67 +1,26 @@
-"""
-City related functionality
-"""
+#!/usr/bin/python
 
-from src.models.base import Base
-from src.models.country import Country
+""" holds class City"""
+
+import models
+from models.base_model import BaseModel, Base
+from os import getenv
+import sqlalchemy
+from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy.orm import relationship
 
 
-class City(Base):
-    """City representation"""
+class City(BaseModel, Base):
+    """Representation of city """
+    if models.storage_t == "db":
+        __tablename__ = 'cities'
+        state_id = Column(String(60), ForeignKey('states.id'), nullable=False)
+        name = Column(String(128), nullable=False)
+        places = relationship("Place", backref="cities", cascade="all, delete-orphan")
+    else:
+        state_id = ""
+        name = ""
 
-    name: str
-    country_code: str
-
-    def __init__(self, name: str, country_code: str, **kw) -> None:
-        """Dummy init"""
-        super().__init__(**kw)
-
-        self.name = name
-        self.country_code = country_code
-
-    def __repr__(self) -> str:
-        """Dummy repr"""
-        return f"<City {self.id} ({self.name})>"
-
-    def to_dict(self) -> dict:
-        """Dictionary representation of the object"""
-        return {
-            "id": self.id,
-            "name": self.name,
-            "country_code": self.country_code,
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
-        }
-
-    @staticmethod
-    def create(data: dict) -> "City":
-        """Create a new city"""
-        from src.persistence import repo
-
-        country = Country.get(data["country_code"])
-
-        if not country:
-            raise ValueError("Country not found")
-
-        city = City(**data)
-
-        repo.save(city)
-
-        return city
-
-    @staticmethod
-    def update(city_id: str, data: dict) -> "City":
-        """Update an existing city"""
-        from src.persistence import repo
-
-        city = City.get(city_id)
-
-        if not city:
-            raise ValueError("City not found")
-
-        for key, value in data.items():
-            setattr(city, key, value)
-
-        repo.update(city)
-
-        return city
+    def __init__(self, *args, **kwargs):
+        """initializes city"""
+        super().__init__(*args, **kwargs)
