@@ -1,6 +1,20 @@
+"""
+  Now is easy to implement the database repository. The DBRepository
+  should implement the Repository (Storage) interface and the methods defined
+  in the abstract class Storage.
+
+  The methods to implement are:
+    - get_all
+    - get
+    - save
+    - update
+    - delete
+    - reload (which can be empty)
+"""
+
 from src.models.base import Base
 from src.persistence.repository import Repository
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.org import SQLAlchemyError
 
 class DBRepository(Repository):
     """Database repository implementation"""

@@ -1,37 +1,67 @@
-#!/usr/bin/python3
-
-""" holds class country"""
-
-import models
-from models.base_model import BaseModel, Base
-from models.city import City
-from os import getenv
-import sqlalchemy
-from sqlalchemy import Column, String, ForeignKey
+"""
+Country related functionality
+"""
+import datetime
+from src.models.base import Base
+import uuid
 from sqlalchemy.orm import relationship
+from sqlalchemy import Column, String, DateTime
+from src.persistence import repo
 
+class Country:
+    """
+    Country representation
 
-class country(BaseModel, Base):
-    """Representation of state """
-    if models.storage_t == "db":
-        __tablename__ = 'states'
-        name = Column(String(128), nullable=False)
-        cities = relationship("City", backref="state",
-                              cascade="all, delete-orphan")
-    else:
-        name = ""
+    This class does NOT inherit from Base, you can't delete or update a country
 
-    def __init__(self, *args, **kwargs):
-        """initializes state"""
-        super().__init__(*args, **kwargs)
+    This class is used to get and list countries
+    """
+    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    name = Column(String(120), nullable=False, unique=True)
+    code = Column(String(3), nullable=False, unique=True)
+    cities = relationship("City", back_populates="country")
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, onupdate=datetime.datetime.now)
 
-    if models.storage_t != "db":
-        @property
-        def cities(self):
-            """getter for list of city instances related to the state"""
-            city_list = []
-            all_cities = models.storage.all(City)
-            for city in all_cities.values():
-                if city.state_id == self.id:
-                    city_list.append(city)
-            return city_list
+    def __init__(self, name: str, code: str, **kw) -> None:
+        """Dummy init"""
+        super().__init__(**kw)
+        self.name = name
+        self.code = code
+
+    def __repr__(self) -> str:
+        """Dummy repr"""
+        return f"<Country {self.code} ({self.name})>"
+
+    def to_dict(self) -> dict:
+        """Returns the dictionary representation of the country"""
+        return {
+            "name": self.name,
+            "code": self.code,
+        }
+
+    @staticmethod
+    def get_all() -> list["Country"]:
+        """Get all countries"""
+
+        countries: list["Country"] = repo.get_all("country")
+
+        return countries
+
+    @staticmethod
+    def get(code: str) -> "Country | None":
+        """Get a country by its code"""
+        for country in Country.get_all():
+            if country.code == code:
+                return country
+        return None
+
+    @staticmethod
+    def create(name: str, code: str) -> "Country":
+        """Create a new country"""
+
+        country = Country(name, code)
+
+        repo.save(country)
+
+        return country

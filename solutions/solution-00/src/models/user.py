@@ -1,34 +1,82 @@
-#!/usr/bin/python3
+"""
+User related functionality
+"""
 
-""" holds class User"""
-
-import models
-from models.base_model import BaseModel, Base
-from os import getenv
-import sqlalchemy
-from sqlalchemy import Column, String
+import datetime
+from src.models.base import Base
 from sqlalchemy.orm import relationship
+import uuid
+from src.persistence import repo
+from src.models.base import BaseModel
+from sqlalchemy import Column, String, Boolean, DateTime
 
 
-class User(BaseModel, Base):
-    """Representation of a user """
-    
-    if models.storage_t == 'db':
-        __tablename__ = 'users'
+class User(Base):
+    """User representation"""
 
-        email = Column(String(128), nullable=False)
-        password = Column(String(128), nullable=False)
-        first_name = Column(String(128), nullable=True)
-        last_name = Column(String(128), nullable=True)
-        places = relationship("Place", backref="user",
-                              cascade="all, delete-orphan")
-        reviews = relationship("Review", backref="user")
-    else:
-        email = ""
-        password = ""
-        first_name = ""
-        last_name = ""
+    __tablename__ = 'user'
 
-    def __init__(self, *args, **kwargs):
-        """initializes user"""
-        super().__init__(*args, **kwargs)
+    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    email = Column(String(120), unique=True, nullable=False)
+    password = Column(String(128), nullable=False)
+    is_admin = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, onupdate=datetime.datetime.now)
+
+    def __init__(self, email: str, first_name: str, last_name: str, **kw):
+        """Dummy init"""
+        super().__init__(**kw)
+        self.email = email
+        self.first_name = first_name
+        self.last_name = last_name
+
+    def __repr__(self) -> str:
+        """Dummy repr"""
+        return f"<User {self.id} ({self.email})>"
+
+    def to_dict(self) -> dict:
+        """Dictionary representation of the object"""
+        return {
+            "id": self.id,
+            "email": self.email,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+        }
+
+    @staticmethod
+    def create(user: dict) -> "User":
+        """Create a new user"""
+
+        users: list["User"] = User.get_all()
+
+        for u in users:
+            if u.email == user["email"]:
+                raise ValueError("User already exists")
+
+        new_user = User(**user)
+
+        repo.save(new_user)
+
+        return new_user
+
+    @staticmethod
+    def update(user_id: str, data: dict) -> "User | None":
+        """Update an existing user"""
+
+        user: User | None = User.get(user_id)
+
+        if not user:
+            return None
+
+        if "email" in data:
+            user.email = data["email"]
+        if "first_name" in data:
+            user.first_name = data["first_name"]
+        if "last_name" in data:
+            user.last_name = data["last_name"]
+
+        repo.update(user)
+
+        return user

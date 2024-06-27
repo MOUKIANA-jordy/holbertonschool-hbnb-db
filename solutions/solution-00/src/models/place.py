@@ -1,81 +1,131 @@
-#!/usr/bin/python
+"""
+Country related functionality
+"""
 
-""" holds class Place"""
-
-import models
-from models.base_model import BaseModel, Base
-from os import getenv
-import sqlalchemy
-from sqlalchemy import Column, String, Integer, Float, ForeignKey, Table
+import datetime
+from src.models.base import Base
+import uuid
 from sqlalchemy.orm import relationship
-
-if models.storage_t == 'db':
-    place_amenity = Table('place_amenity', Base.metadata,
-                          Column('place_id', String(60),
-                                 ForeignKey('places.id', onupdate='CASCADE',
-                                            ondelete='CASCADE'),
-                                 primary_key=True),
-                          Column('amenity_id', String(60),
-                                 ForeignKey('amenities.id', onupdate='CASCADE',
-                                            ondelete='CASCADE'),
-                                 primary_key=True))
+from src.models.user import User
+from src.persistence import repo
+from sqlalchemy import Column, String, DateTime
 
 
-class Place(BaseModel, Base):
-    """Representation of Place """
-    if models.storage_t == 'db':
-        __tablename__ = 'places'
-        city_id = Column(String(60), ForeignKey('cities.id'), nullable=False)
-        user_id = Column(String(60), ForeignKey('users.id'), nullable=False)
-        name = Column(String(128), nullable=False)
-        description = Column(String(1024), nullable=True)
-        number_rooms = Column(Integer, nullable=False, default=0)
-        number_bathrooms = Column(Integer, nullable=False, default=0)
-        max_guest = Column(Integer, nullable=False, default=0)
-        price_by_night = Column(Integer, nullable=False, default=0)
-        latitude = Column(Float, nullable=True)
-        longitude = Column(Float, nullable=True)
-        reviews = relationship("Review", backref="place",
-                               cascade="all, delete-orphan")
-        amenities = relationship("Amenity", secondary="place_amenity",
-                                 backref="place_amenities",
-                                 viewonly=False)
-    else:
-        city_id = ""
-        user_id = ""
-        name = ""
-        description = ""
-        number_rooms = 0
-        number_bathrooms = 0
-        max_guest = 0
-        price_by_night = 0
-        latitude = 0.0
-        longitude = 0.0
-        amenity_ids = []
+class Country:
+    """
+    Country representation
 
-    def __init__(self, *args, **kwargs):
-        """initializes Place"""
-        super().__init__(*args, **kwargs)
+    This class does NOT inherit from Base, you can't delete or update a country
 
-    if models.storage_t != 'db':
-        @property
-        def reviews(self):
-            """getter attribute returns the list of Review instances"""
-            from models.review import Review
-            review_list = []
-            all_reviews = models.storage.all(Review)
-            for review in all_reviews.values():
-                if review.place_id == self.id:
-                    review_list.append(review)
-            return review_list
+    This class is used to get and list countries
+    """
+    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    name = Column(String(120), nullable=False, unique=True)
+    code = Column(String(3), nullable=False, unique=True)
+    cities = relationship("City", back_populates="country")
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, onupdate=datetime.datetime.now)
 
-        @property
-        def amenities(self):
-            """getter attribute returns the list of Amenity instances"""
-            from models.amenity import Amenity
-            amenity_list = []
-            all_amenities = models.storage.all(Amenity)
-            for amenity in all_amenities.values():
-                if amenity.place_id == self.id:
-                    amenity_list.append(amenity)
-            return amenity_list
+    def __init__(self, name: str, code: str, **kw) -> None:
+        """Dummy init"""
+        super().__init__(**kw)
+        self.name = name
+        self.code = code
+
+    def __repr__(self) -> str:
+        """Dummy repr"""
+        return f"<Country {self.code} ({self.name})>"
+
+    def to_dict(self) -> dict:
+        """Returns the dictionary representation of the country"""
+        return {
+            "name": self.name,
+            "code": self.code,
+        }
+
+    @staticmethod
+    def get_all() -> list["Country"]:
+        """Get all countries"""
+        from src.persistence import repo
+
+        countries: list["Country"] = repo.get_all("country")
+
+        return countries
+
+    @staticmethod
+    def get(code: str) -> "Country | None":
+        """Get a country by its code"""
+        for country in Country.get_all():
+            if country.code == code:
+                return country
+        return None
+
+    @staticmethod
+    def create(name: str, code: str) -> "Country":
+        """Create a new country"""
+        from src.persistence import repo
+
+        country = Country(name, code)
+
+        repo.save(country)
+
+        return country
+class Country:
+    """
+    Country representation
+
+    This class does NOT inherit from Base, you can't delete or update a country
+
+    This class is used to get and list countries
+    """
+    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    name = Column(String(120), nullable=False, unique=True)
+    code = Column(String(3), nullable=False, unique=True)
+    cities = relationship("City", back_populates="country")
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, onupdate=datetime.datetime.now)
+
+    def __init__(self, name: str, code: str, **kw) -> None:
+        """Dummy init"""
+        super().__init__(**kw)
+        self.name = name
+        self.code = code
+
+    def __repr__(self) -> str:
+        """Dummy repr"""
+        return f"<Country {self.code} ({self.name})>"
+
+    def to_dict(self) -> dict:
+        """Returns the dictionary representation of the country"""
+        return {
+            "name": self.name,
+            "code": self.code,
+        }
+
+    @staticmethod
+    def get_all() -> list["Country"]:
+        """Get all countries"""
+        from src.persistence import repo
+
+        countries: list["Country"] = repo.get_all("country")
+
+        return countries
+
+    @staticmethod
+    def get(code: str) -> "Country | None":
+        """Get a country by its code"""
+        for country in Country.get_all():
+            if country.code == code:
+                return country
+        return None
+
+    @staticmethod
+    def create(name: str, code: str) -> "Country":
+        """Create a new country"""
+        from src.persistence import repo
+
+        country = Country(name, code)
+
+        repo.save(country)
+
+        return country
