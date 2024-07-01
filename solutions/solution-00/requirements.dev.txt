@@ -1,1 +1,8 @@
 pycodestyle
+# .env
+DATABASE_TYPE=sqlite
+DATABASE_URL=sqlite:///dev.db
+# For production
+# DATABASE_TYPE=postgresql
+# DATABASE_URL=postgresql://user:password@localhost/dbname
+

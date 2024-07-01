@@ -12,37 +12,31 @@
     - reload (which can be empty)
 """
 
+from flask_sqlalchemy import SQLAlchemy
+
 from src.models.base import Base
 from src.persistence.repository import Repository
-from sqlalchemy.org import SQLAlchemyError
+from src.db import db
 
 class DBRepository(Repository):
     """Database repository implementation"""
+     db: SQLAlchemy
 
-    def __init__(self):
+    def __init__(self): -> None
         """Initialize the repository with SQLAlchemy's session"""
-        self.session = db.session
+        self.db = db
 
-    def get_all(self, model_name: str) -> list:
+    def get_all(self, model: str) -> list:
         """Retrieve all records of a given model"""
 
         model_class = globals()[model_name]
-        try:
-            return self.session.query(model_class).all()
-        except SQLAlchemyError as e:
-            self.session.rollback()
-            print(f"Error retrieving all {model_name}: {e}")
-            return []
+            return db.session.query(model).all()
 
-    def get(self, model_name: str, obj_id: str) -> Base | None:
+    def get(self, model_name: str, obj_id: str) -> BaseModel | None:
         """Retrieve a record by its ID"""
         model_class = globals()[model_name]
-        try:
             return self.session.query(model_class).get(obj_id)
-        except SQLAlchemyError as e:
-            self.session.rollback()
-            print(f"Error retrieving {model_name} with id {obj_id}: {e}")
-            return None
+
 
     def save(self, obj: Base) -> None:
         """Save a new record"""

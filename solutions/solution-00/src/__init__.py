@@ -2,8 +2,15 @@
 
 from flask import Flask
 from flask_cors import CORS
+from src.persistence.db import db
+from dotenv import load_dotenv
+from flask_jwt_extended import JWTManager
+import os
 
 cors = CORS()
+load_dotenv()
+
+jwt = JWTManager()
 
 
 def create_app(config_class="src.config.DevelopmentConfig") -> Flask:
@@ -15,6 +22,7 @@ def create_app(config_class="src.config.DevelopmentConfig") -> Flask:
     app.url_map.strict_slashes = False
 
     app.config.from_object(config_class)
+    app.config['JWT_MYSTER_KEY'] = os.getenv('MYSTER_KEY')
 
     register_extensions(app)
     register_routes(app)

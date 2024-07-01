@@ -9,7 +9,7 @@ import uuid
 from src.persistence import repo
 from src.models.base import BaseModel
 from sqlalchemy import Column, String, Boolean, DateTime
-
+from flask_bcrypt import Bcrypt
 
 class User(Base):
     """User representation"""
@@ -43,6 +43,7 @@ class User(Base):
             "last_name": self.last_name,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
+             "is_admin": self.is_admin,
         }
 
     @staticmethod
@@ -76,7 +77,18 @@ class User(Base):
             user.first_name = data["first_name"]
         if "last_name" in data:
             user.last_name = data["last_name"]
+        if "password" in data:
+            user.password = data["password"]
+        if "is_admin" in data:
+            user.is_admin = data["is_admin"]
 
         repo.update(user)
 
         return user
+    
+    @staticmethod
+    def set_password(self, password):
+         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+
+    def check_password(self, password):
+         return bcrypt.check_password_hash(self.password_hash, password)
