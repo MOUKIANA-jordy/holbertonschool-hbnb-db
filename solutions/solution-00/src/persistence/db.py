@@ -28,51 +28,27 @@ class DBRepository(Repository):
 
     def get_all(self, model: str) -> list:
         """Retrieve all records of a given model"""
-
-        model_class = globals()[model_name]
             return db.session.query(model).all()
 
     def get(self, model_name: str, obj_id: str) -> BaseModel | None:
         """Retrieve a record by its ID"""
-        model_class = globals()[model_name]
-            return self.session.query(model_class).get(obj_id)
-
-
-    def save(self, obj: Base) -> None:
-        """Save a new record"""
-        try:
-            self.session.add(obj)
-            self.session.commit()
-        except SQLAlchemyError as e:
-            self.session.rollback()
-            print(f"Error saving {obj}: {e}")
-    def update(self, obj: Base) -> Base | None:
-        """Update an existing record"""
-        try:
-            existing_obj = self.session.query(type(obj)).get(obj.id)
-            if existing_obj:
-                self.session.merge(obj)
-                self.session.commit()
+         for obj in self.get_all(model):
+            if obj.id == obj_id:
                 return obj
-            else:
-                print(f"No record found to update: {obj}")
-                return None
-        except SQLAlchemyError as e:
-            self.session.rollback()
-            print(f"Error updating {obj}: {e}")
-            return None
-
-    def delete(self, obj: Base) -> bool:
-        """Delete a record"""
-        try:
-            self.session.delete(obj)
-            self.session.commit()
-            return True
-        except SQLAlchemyError as e:
-            self.session.rollback()
-            print(f"Error deleting {obj}: {e}")
-            return False
+        return None
 
     def reload(self) -> None:
-        """Reload can be used to refresh the session, can be a no-op"""
-        self.session.flush()
+        pass
+
+
+    def save(self, obj) -> None:
+        """Save a new record"""
+            self.db.session.add(obj)
+            self.db.session.commit()
+
+    def update(self, obj) -> BaseModel | None:
+         """Not implemented"""
+            
+    def delete(self, obj: Base) -> bool:
+         """Not implemented"""
+        return False
